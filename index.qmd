@@ -1,10 +1,11 @@
 ---
 title: "Self-reported life satisfaction, 2011 to 2023"
 subtitle: "Replicating the Our World in Data Grapher"
-author: "YOUR NAME HERE" # Remember to add your name!
+author: "Olugbenga Asaolu" # Remember to add your name!
 theme: united
 ---
 
+::: {.hidden}
 <!-- Custom HTML and style to add logo and custom font [DO NOT EDIT THIS SECTION] -->
 
 <img src="Our_World_in_Data_logo.png" style="position:absolute; top:0; right:0; padding:10px;" width="146"/>
@@ -26,7 +27,7 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
 # Load packages
 if (!require(pacman)) install.packages("pacman")
-pacman::p_load(plotly, tidyverse, reactable, here, scales)
+pacman::p_load(plotly, tidyverse, reactable, here, scales, patchwork)
 ```
 
 ```{r}
@@ -36,6 +37,45 @@ cantril <-
     rename(Country = Entity)
 ```
 
+```{r}
+cantril_2011_2023 <-
+  cantril %>% 
+  group_by(Country) %>% 
+  filter(Year %in% c("2011", "2023"))
+
+
+cantril_tab<-cantril_2011_2023 %>% 
+  pivot_wider(values_from = "Cantril ladder score", 
+              names_from = "Year")
+
+
+cantril_table <- cantril_tab %>% 
+  select(Country, "2011", "2023")
+
+# Create new columns
+cantril_table <- cantril_table %>%
+  mutate(
+    absolute_change = `2023` - `2011`,
+    relative_change = (`2023` - `2011`) / `2011` * 100
+  )
+    
+cantril_table
+
+cantril_table <- cantril_tab %>%
+  mutate(
+    absolute_change = round(`2023` - `2011`, 2),
+    relative_change_value = round((`2023` - `2011`) / `2011` * 100, 2),     # numeric version rounded
+    relative_change = paste0(relative_change_value, "%")                    # text version with % sign
+  ) %>%
+  select(Country, `2011`, `2023`, absolute_change, relative_change)    # Arrange columns nicely
+
+cantril_table
+
+
+```
+
+:::
+
 ### Happiness across the world over time
 
 The World Happiness Report is a well-known source of cross-country data on self-reported life satisfaction, collected by the Gallup World Poll. The visualizations below present the ‘happiness scores’ for each country.
@@ -44,6 +84,7 @@ The main life evaluation question asked in the poll is the Cantril Life Ladder q
 
 > “Please imagine a ladder, with steps numbered from 0 at the bottom to 10 at the top. The top of the ladder represents the best possible life for you and the bottom of the ladder represents the worst possible life for you. On which step of the ladder would you say you personally feel you stand at this time?”
 
+::: {.panel-tabset}
 
 ## 🔢 Table
 
@@ -63,7 +104,10 @@ The main life evaluation question asked in the poll is the Cantril Life Ladder q
 # 5. Also with `mutate`, you should round your numbers to appropriate decimal places.
 # 6. Then use scales::percent to format the Relative change as a percentage.
 # 7. Use the `reactable` function to create and output the table.
-"WRITE_YOUR_CODE_HERE"
+
+reactable(cantril_table)
+
+
 ```
 
 
@@ -111,6 +155,30 @@ cantril %>%
 
 "WRITE_YOUR_CODE_HERE"
 # (When you're done with this section, don't forget to add tabsets, as mentioned in the instructions.)
+
+# 1. Filter the data to 4–8 countries you want to highlight
+cantril_mini <- cantril %>%
+  filter(Country %in% c("Australia", "Austria", "Botswana", "Brazil", "Brunei"))
+
+# 2. Create the ggplot line chart
+cantril_linechart <- cantril_mini %>%
+  ggplot(aes(x = Year, y = `Cantril ladder score`, color = Country)) +
+  geom_line(size = 1.2) +    # 3. Use geom_line for lines
+  geom_point(size = 2) +     # Optional: add points
+  scale_y_continuous(limits = c(0, 10)) +    # 4. Set y-axis from 0 to 10
+  labs(
+    title = "Trends in Cantril Ladder Scores (Selected Countries)",  # 5. Neat labels
+    x = "Year",
+    y = "Cantril Ladder Score",
+    color = "Country"
+  ) +
+  theme_minimal()             # 6. Set clean minimal theme
+
+# 7. Make it interactive with ggplotly
+   ggplotly(cantril_linechart)
+
+
+
 ```
 
 ## 📈 Advanced Chart
@@ -166,16 +234,57 @@ function filter_default() {
 window.onload = filter_default;
 </script>
 
+## 📈 Happiness Rank
 
 ```{r}
 # OPTIONAL CHALLENGE SECTION:
 
 # Add a final tab with a single figure that shows the top 10 and bottom 10 countries by happiness score in 2023. Remember to add a ## header and include it in the tabsets
-# "WRITE_YOUR_CODE_HERE"
+
+# 1. Filter 2023 data only
+happiness_2023 <- cantril %>%
+  filter(Year == 2023) %>%
+  arrange(desc(`Cantril ladder score`)) 
+
+# 2. Top 10 happiest
+top10 <- happiness_2023 %>%
+  slice_head(n = 10)
+
+# 3. Bottom 10 least happy
+bottom10 <- happiness_2023 %>%
+  slice_tail(n = 10)
+
+# 4. Plotting
+top10_plot <- top10 %>%
+  ggplot(aes(x = reorder(Country, `Cantril ladder score`), y = `Cantril ladder score`, fill = Country)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  labs(
+    title = "Top 10 Happiest Countries (2023)",
+    x = NULL,
+    y = "Cantril Ladder Score"
+  ) +
+  theme_minimal()
+ggplotly (top10_plot)
+
+bottom10_plot <- bottom10 %>%
+  ggplot(aes(x = reorder(Country, `Cantril ladder score`), y = `Cantril ladder score`, fill = Country)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  labs(
+    title = "Bottom 10 Least Happy Countries (2023)",
+    x = NULL,
+    y = "Cantril Ladder Score"
+  ) +
+  theme_minimal()
+ ggplotly (bottom10_plot)
+
 ```
 
 
 # {.unlisted}
+
+:::
 
 Data source: World Happiness Report
 
