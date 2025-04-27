@@ -153,7 +153,6 @@ cantril %>%
 # 6. Use theme_minimal to set the theme.
 # 7. Finally, use ggplotly to convert the ggplot chart to a plotly chart
 
-"WRITE_YOUR_CODE_HERE"
 # (When you're done with this section, don't forget to add tabsets, as mentioned in the instructions.)
 
 # 1. Filter the data to 4–8 countries you want to highlight
